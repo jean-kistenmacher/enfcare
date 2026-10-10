@@ -1,0 +1,184 @@
+
+<div class="d-flex flex-column flex-row-fluid" id="kt_wrapper">
+  <.flash_group flash={@flash} id={"app-page-#{System.unique_integer([:positive]) |> Integer.to_string()}"} />
+  <!--begin::Post-->
+  <div class="post d-flex flex-column-fluid" id="kt_post">
+    <!--begin::Container-->
+    <div id="kt_content_container" class="container-xxl">
+      <!--begin::Card-->
+      <div :if={not (@live_action in [:new, :edit])} class="card mt-10">
+        <!--begin::Card header-->
+        <div class="card-header border-0 pt-6">
+          <!--begin::Card title-->
+          <div class="card-title">
+            <!--begin::Search-->
+            <div class="d-flex align-items-center position-relative my-1">
+              <%!-- <i class="ki-outline ki-magnifier fs-3 position-absolute ms-5"></i>
+              <input type="text" data-kt-customer-table-filter="search" class="form-control form-control-solid w-250px ps-12" placeholder="Buscar" /> --%>
+            </div>
+            <!--end::Search-->
+          </div>
+          <!--begin::Card title-->
+          <!--begin::Card toolbar-->
+          <div class="card-toolbar">
+            <!--begin::Toolbar-->
+            <div class="d-flex justify-content-end" data-kt-customer-table-toolbar="base">
+              <!--begin::Add customer-->
+              <.link patch={~p"/course/courses/new"}>
+                <.button class="btn btn-primary">Novo</.button>
+              </.link>
+              <!--end::Add customer-->
+            </div>
+            <!--end::Toolbar-->
+            <!--begin::Group actions-->
+            <div class="d-flex justify-content-end align-items-center d-none" data-kt-customer-table-toolbar="selected">
+              <div class="fw-bold me-5">
+              <span class="me-2" data-kt-customer-table-select="selected_count"></span>Selected</div>
+              <button type="button" class="btn btn-danger" data-kt-customer-table-select="delete_selected">Delete Selected</button>
+            </div>
+            <!--end::Group actions-->
+          </div>
+          <!--end::Card toolbar-->
+        </div>
+        <!--end::Card header-->
+        <!--begin::Card body-->
+        <div class="card-body pt-0">
+          <!--begin::Table-->
+          <table class="table align-middle table-row-dashed fs-6 gy-5" id="kt_customers_table">
+            <thead>
+              <tr class="text-start text-gray-500 fw-bold fs-7 text-uppercase gs-0">
+                <th class="min-w-50px">#</th>
+                <th class="min-w-200px">Protocolo</th>
+                <th class="min-w-150px">Mídia</th>
+                <th class="min-w-150px">Formulários</th>
+                <th class="min-w-100px">PDF</th>
+                <th class="min-w-125px">Data</th>
+                <th class="min-w-100px text-end">Ações</th>
+              </tr>
+            </thead>
+            <tbody class="fw-semibold text-gray-600">
+              <%= for item <- @courses do %>
+                <tr>
+                  <td>
+                    <span class="text-gray-800 fw-bold">#<%= item.id %></span>
+                  </td>
+                  <td>
+                    <div class="d-flex flex-column">
+                      <.link class="text-gray-800 text-hover-primary fw-bold mb-1" patch={~p"/course/courses/#{item}/edit"}>
+                        <%= item.title %>
+                      </.link>
+                      <span class="text-gray-500 fs-7">Ordem: <%= item.position %></span>
+                      <span class="text-gray-500 fs-7"><%= String.slice(item.description || "", 0, 60) %><%= if String.length(item.description || "") > 60, do: "..." %></span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="d-flex flex-column gap-2">
+                      <!-- Imagem miniatura -->
+                      <%= if item.image && item.image != "" do %>
+                        <div class="d-flex align-items-center gap-2">
+                          <i class="ki-outline ki-picture fs-3 text-primary"></i>
+                          <img src={item.image} class="w-50px h-50px rounded" alt="Imagem" />
+                        </div>
+                      <% end %>
+                      <!-- Vídeo -->
+                      <%= if item.video && item.video != "" do %>
+                        <div class="d-flex align-items-center gap-2">
+                          <i class="ki-outline ki-youtube fs-3 text-danger"></i>
+                          <a href={"https://www.youtube.com/watch?v=#{item.video}"} target="_blank" class="text-gray-700 text-hover-primary fs-7">
+                            Ver vídeo
+                          </a>
+                        </div>
+                      <% else %>
+                        <span class="text-gray-400 fs-8">Sem vídeo</span>
+                      <% end %>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="d-flex flex-column gap-2">
+                      <!-- Form 1 -->
+                      <%= if item.form1 && item.form1 != "" do %>
+                        <a href={item.form1} target="_blank" class="badge badge-light-primary">
+                          <i class="ki-outline ki-document fs-6 me-1"></i>
+                          Formulário 1
+                        </a>
+                      <% else %>
+                        <span class="badge badge-light-secondary">
+                          <i class="ki-outline ki-cross-circle fs-6 me-1"></i>
+                          Sem Form 1
+                        </span>
+                      <% end %>
+                      <!-- Form 2 -->
+                      <%= if item.form2 && item.form2 != "" do %>
+                        <a href={item.form2} target="_blank" class="badge badge-light-success">
+                          <i class="ki-outline ki-document fs-6 me-1"></i>
+                          Formulário 2
+                        </a>
+                      <% else %>
+                        <span class="badge badge-light-secondary">
+                          <i class="ki-outline ki-cross-circle fs-6 me-1"></i>
+                          Sem Form 2
+                        </span>
+                      <% end %>
+                    </div>
+                  </td>
+                  <td>
+                    <%= if item.pdf && item.pdf != "" do %>
+                      <a href={item.pdf} download="curso-#{item.id}.pdf" class="btn btn-sm btn-light-info">
+                        <i class="ki-outline ki-file-down fs-4"></i>
+                        Baixar
+                      </a>
+                    <% else %>
+                      <span class="text-gray-400 fs-8">Sem PDF</span>
+                    <% end %>
+                  </td>
+                  <td>
+                    <div class="d-flex align-items-center">
+                      <i class="ki-outline ki-calendar fs-4 text-gray-500 me-2"></i>
+                      <span class="text-gray-800"><%= format_datetime_crud(item.date) %></span>
+                    </div>
+                  </td>
+                  <td class="text-end">
+                    <div class="d-flex justify-content-end gap-2">
+                      <a href={"/show/#{item.id}"} class="btn btn-sm btn-light-info">
+                        <i class="ki-outline ki-eye fs-5"></i>
+                        Detalhes
+                      </a>
+                      <.link class="btn btn-sm btn-light-primary" patch={~p"/course/courses/#{item}/edit"}>
+                        <i class="ki-outline ki-pencil fs-5"></i>
+                        Editar
+                      </.link>
+                      <.link
+                        class="btn btn-sm btn-light-danger"
+                        phx-click={JS.push("delete", value: %{id: item.id}) |> hide("##{item.id}")}
+                        data-confirm="Deletar esse registro?"
+                      >
+                        <i class="ki-outline ki-trash fs-5"></i>
+                        Excluir
+                      </.link>
+                    </div>
+                  </td>
+                </tr>
+              <% end %>
+              
+            </tbody>
+          </table>
+          <!--end::Table-->
+        </div>
+        <!--end::Card body-->
+      </div>
+      <!--end::Card-->
+      <.modal :if={@live_action in [:new, :edit]} id="course-modal" show on_cancel={JS.patch(~p"/course/courses")}>
+        <.live_component
+          module={AppWeb.Course.CourseLive.FormComponent}
+          id={@course.id || :new}
+          title={@page_title}
+          action={@live_action}
+          course={@course}
+          patch={~p"/course/courses"}
+        />
+      </.modal>
+    </div>
+    <!--end::Container-->
+  </div>
+  <!--end::Post-->
+</div>

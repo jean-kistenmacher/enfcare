@@ -1,0 +1,260 @@
+<!--begin::Messenger-->
+<div class="card w-100 border-0 rounded-0" id="kt_drawer_chat_messenger">
+  <!--begin::Card header-->
+  <div class="card-header pe-5" id="kt_drawer_chat_messenger_header">
+    <!--begin::Title-->
+    <div class="card-title">
+      <!--begin::User-->
+      <div class="d-flex justify-content-center flex-column me-3">
+        <a href="#" class="fs-4 fw-bold text-gray-900 text-hover-primary me-1 mb-2 lh-1">Dóris</a>
+        <!--begin::Info-->
+        <div class="mb-0 lh-1">
+          <span class="badge badge-success badge-circle w-10px h-10px me-1"></span>
+          <span class="fs-7 fw-semibold text-muted">Online</span>
+        </div>
+        <div>
+          <image
+            src={@doris_image}
+            alt="Dóris"
+            class="d-block mx-auto"
+            style="position: absolute;width: 90px; top: 2px; right: 306px;"
+          />
+        </div>
+        <!--end::Info-->
+      </div>
+      <!--end::User-->
+    </div>
+    <!--end::Title-->
+					<!--begin::Card toolbar-->
+    <div class="card-toolbar">
+      <!--begin::Menu-->
+      <div class="me-0">
+        <button
+          class="btn btn-sm btn-icon btn-active-color-primary"
+          data-kt-menu-trigger="click"
+          data-kt-menu-placement="bottom-end"
+        >
+          <i class="ki-outline ki-dots-square fs-2"></i>
+        </button>
+        <!--begin::Menu 3-->
+        <div
+          class="menu menu-sub menu-sub-dropdown menu-column menu-rounded menu-gray-800 menu-state-bg-light-primary fw-semibold w-200px py-3"
+          data-kt-menu="true"
+        >
+          <!--begin::Heading-->
+          <div class="menu-item px-3">
+            <div class="menu-content text-muted pb-2 px-3 fs-7 text-uppercase">Configuração</div>
+          </div>
+          <!--end::Heading-->
+								<!--begin::Menu item-->
+          <div class="menu-item px-3">
+            <.link
+              class="menu-link px-3"
+              phx-click={JS.push("clear_chat")}
+              data-confirm="Você tem certeza?"
+            >
+              Limpar Chat
+            </.link>
+          </div>
+          <!--end::Menu item-->
+        </div>
+        <!--end::Menu 3-->
+      </div>
+      <!--end::Menu-->
+						<!--begin::Close-->
+      <div class="btn btn-sm btn-icon btn-active-color-primary" id="kt_drawer_chat_close">
+        <i class="ki-outline ki-cross-square fs-2"></i>
+      </div>
+      <!--end::Close-->
+    </div>
+    <!--end::Card toolbar-->
+  </div>
+  <!--end::Card header-->
+				<!--begin::Card body-->
+  <div class="card-body" id="kt_drawer_chat_messenger_body">
+    <!--begin::Messages-->
+    <div
+      id="chat-content"
+      class="scroll-y me-n5 pe-5 w-275px w-lg-450px"
+      style="
+        height: 63vh;
+        @media (max-width: 768px) {
+          height: 70vh;
+        }
+      "
+      data-kt-element="messages"
+      data-kt-scroll="true"
+      data-kt-scroll-activate="true"
+      data-kt-scroll-height="auto"
+      data-kt-scroll-dependencies="#kt_drawer_chat_messenger_header, #kt_drawer_chat_messenger_footer"
+      data-kt-scroll-wrappers="#kt_drawer_chat_messenger_body"
+      data-kt-scroll-offset="0px"
+    >
+      <%= for chat <- @chats do %>
+        <%= if not chat.is_user do %>
+          <!--begin::Message(in)-->
+          <div class="d-flex justify-content-start mb-10">
+            <!--begin::Wrapper-->
+            <div class="d-flex flex-column align-items-start">
+              <!--begin::User-->
+              <div class="d-flex align-items-center mb-2">
+                <!--begin::Avatar-->
+                <div class="symbol symbol-35px symbol-circle">
+                  <img alt="Pic" src={~p"/images/doris_neutra.png"} />
+                </div>
+                <!--end::Avatar-->
+                      <!--begin::Details-->
+                <div class="ms-3">
+                  <a href="#" class="fs-5 fw-bold text-gray-900 text-hover-primary me-1">
+                    Dóris
+                  </a>
+                  <span class="text-muted fs-7 mb-1">
+                    <%= format_datetime(chat.inserted_at) %>
+                  </span>
+                </div>
+                <!--end::Details-->
+              </div>
+              <!--end::User-->
+                    <!--begin::Text-->
+              <div
+                class="p-5 rounded bg-light-info text-gray-900 fw-semibold mw-lg-400px text-start"
+                data-kt-element="message-text"
+              >
+                <%= raw(to_html(chat.message)) %>
+              </div>
+              <!--end::Text-->
+            </div>
+            <!--end::Wrapper-->
+          </div>
+          <!--end::Message(in)-->
+        <% else %>
+          <!--begin::Message(out)-->
+          <div class="d-flex justify-content-end mb-10">
+            <!--begin::Wrapper-->
+            <div class="d-flex flex-column align-items-end">
+              <!--begin::User-->
+              <div class="d-flex align-items-center mb-2">
+                <!--begin::Details-->
+                <div class="me-3">
+                  <span class="text-muted fs-7 mb-1">
+                    <%= format_datetime(chat.inserted_at) %>
+                  </span>
+                  <a href="#" class="fs-5 fw-bold text-gray-900 text-hover-primary ms-1">
+                    <%= @user.name %>
+                  </a>
+                </div>
+                <!--end::Details-->
+                      <!--begin::Avatar-->
+                <div class="symbol symbol-35px symbol-circle">
+                  <img alt="Pic" src={~p"/images/avataruser.png"} />
+                </div>
+                <!--end::Avatar-->
+              </div>
+              <!--end::User-->
+              <!--begin::Text-->
+              <%= if chat.image do %>
+                <div class="d-flex justify-content-end">
+                  <img src={chat.image} class="mw-200px" />
+                </div>
+              <% end %>
+              <div
+                class="p-5 rounded bg-light-primary text-gray-900 fw-semibold mw-lg-400px text-end"
+                data-kt-element="message-text"
+              >
+                <%= raw(to_html(chat.message)) %>
+              </div>
+              <!--end::Text-->
+            </div>
+            <!--end::Wrapper-->
+          </div>
+          <!--end::Message(out)-->
+        <% end %>
+      <% end %>
+    </div>
+    <!--end::Messages-->
+  </div>
+  <!--end::Card body-->
+				<!--begin::Card footer-->
+  <div class="card-footer pt-4" id="kt_drawer_chat_messenger_footer">
+    <form id="send-message-chat-form-doris-app" phx-submit="send_message" phx-change="validate">
+      <!--begin::Input-->
+      <input
+        class="form-control form-control-flush mb-3"
+        type="text"
+        name="message"
+        value={@message}
+        required
+        placeholder="Digite sua mensagem..."
+      />
+      <.live_file_input
+        id="file-input"
+        upload={@uploads.avatar}
+        style="display: none;"
+        onchange="setNameFile(this.files[0].name)"
+      />
+
+      <%!-- <input type="file" name="image" id="file-input" style="display: none;" onchange="document.getElementById('file-name').textContent = this.files[0].name;" /> --%>
+      <!--end::Input-->
+    </form>
+    <!--begin:Toolbar-->
+    <div class="d-flex flex-end">
+      <!--begin::Actions-->
+      <div class="d-flex align-items-center me-2">
+        <button
+          class="btn btn-sm btn-icon btn-active-light-primary me-1"
+          type="button"
+          data-bs-toggle="tooltip"
+          title="Coming soon"
+          onclick="document.querySelector('input[name=avatar]').click();"
+        >
+          <i class="ki-outline ki-paper-clip fs-3"></i>
+        </button>
+        <span id="file-name"></span>
+      </div>
+      <button
+        id="mic-button"
+        class="btn btn-danger d-none d-lg-block"
+        phx-hook="SpeechToText"
+        phx-disable-with="Fale agora..."
+      >
+        Microfone
+      </button>
+      <!--end::Actions-->
+      <!--begin::Send-->
+      <button
+        class="btn btn-primary"
+        type="submit"
+        form="send-message-chat-form-doris-app"
+        phx-disable-with="Enviando..."
+      >
+        Enviar
+      </button>
+      <!--end::Send-->
+    </div>
+    <!--end::Toolbar-->
+  </div>
+  <!--end::Card footer-->
+</div>
+<%= if @audio_path do %>
+  <audio id="audio-player" phx-hook="PlayAudio" hidden>
+    <source src={@audio_path} type="audio/mpeg" />
+    Your browser does not support the audio element.
+  </audio>
+<% end %>
+<!--end::Messenger-->
+<script>
+  function scrollToBottom() {
+    const chatContent = document.getElementById('chat-content');
+    chatContent.scrollTop = chatContent.scrollHeight;
+  }
+
+  function setNameFile(name) {
+    timeout = setTimeout(() => {
+      document.getElementById('file-name').textContent = name;
+    }, 1000);
+  }
+
+  window.addEventListener("phx:scroll_to_bottom", e => {
+    scrollToBottom()
+  });
+</script>

@@ -1,0 +1,39 @@
+.aside {
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--bs-aside-box-shadow);
+  padding: 0;
+  background-color: #181920;
+}
+
+
+.logo-text {
+  font-family: 'Arial', sans-serif; /* Define a fonte */
+  font-size: 24px; /* Define o tamanho da fonte */
+  font-weight: bold; /* Define o peso da fonte */
+  color: #fefefe; /* Define a cor do texto */
+  text-align: center; /* Centraliza o texto */
+  margin: 20px 0; /* Adiciona espaçamento vertical */
+  display: inline-block; /* Define o display como inline-block */
+}
+
+.gamefication {
+  padding-left: 10% !important;
+  padding-right: 10% !important;
+  position: absolute !important;
+  top: 200px!important;
+  left: 22% !important;
+  width: 1250px !important;
+  z-index: 1000;
+}
+
+@media (max-width: 768px) {
+  gamefication {
+    padding-left: 10% !important;
+    padding-right: 10% !important;
+    position: absolute !important;
+    top: 200px !important;
+    width: 509px !important;
+    z-index: 1000;
+  }
+}

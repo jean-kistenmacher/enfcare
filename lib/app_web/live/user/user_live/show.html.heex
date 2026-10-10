@@ -1,0 +1,28 @@
+<.header>
+  user <%= @user.id %>
+  <:subtitle>This is a user record from your database.</:subtitle>
+  <:actions>
+    <.link patch={~p"/user/users/#{@user}/show/edit"} phx-click={JS.push_focus()}>
+      <.button>Edit user</.button>
+    </.link>
+  </:actions>
+</.header>
+
+<.list>
+  <:item title="Nome"><%= @user.name %></:item>
+  <:item title="Email"><%= @user.email %></:item>
+  <:item title="SuperAdmin"><%= @user.superadmin %></:item>
+</.list>
+
+<.back navigate={~p"/user/users"}>Back to users</.back>
+
+<.modal :if={@live_action == :edit} id="user-modal" show on_cancel={JS.patch(~p"/user/users/#{@user}")}>
+  <.live_component
+    module={AppWeb.User.UserLive.FormComponent}
+    id={@user.id}
+    title={@page_title}
+    action={@live_action}
+    user={@user}
+    patch={~p"/user/users/#{@user}"}
+  />
+</.modal>
