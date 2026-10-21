@@ -48,6 +48,7 @@ defmodule AppWeb.Router do
 
     live "/", HomeLive, :index
     live "/modulos/:id", ModuloLive, :show
+    live "/cursos/:id", CursoLive, :show
   end
 
   scope "/", AppWeb do

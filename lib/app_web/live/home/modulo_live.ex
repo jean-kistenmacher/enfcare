@@ -147,7 +147,7 @@ defmodule AppWeb.ModuloLive do
                       <i class="ki-outline ki-arrow-left fs-5 me-2"></i>Voltar
                     </a>
                     <%= if @item.unlocked? do %>
-                      <.link navigate={~p"/show/#{@item.course.id}"} id="module-start" class="btn btn-success btn-xl px-6 py-3">
+                      <.link navigate={App.CourseContent.start_path(@item)} id="module-start" class="btn btn-success btn-xl px-6 py-3">
                         <%= if @item.completed?, do: "Revisar", else: "Iniciar" %>
                       </.link>
                     <% else %>

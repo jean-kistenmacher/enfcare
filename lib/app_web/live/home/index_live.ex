@@ -67,7 +67,7 @@ defmodule AppWeb.HomeLive do
                     </.link>
                     <%= if item.unlocked? do %>
                       <.link
-                        navigate={~p"/show/#{item.course.id}"}
+                        navigate={App.CourseContent.start_path(item)}
                         id={"module-start-#{item.course.id}"}
                         class="btn btn-success flex-fill px-3 py-3"
                       >

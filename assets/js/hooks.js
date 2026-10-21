@@ -20,6 +20,18 @@ Hooks.ProtocolSession = {
   }
 }
 
+Hooks.CursoConteudo = {
+  mounted() {
+    this.secao = this.el.dataset.secao;
+  },
+  updated() {
+    if (this.el.dataset.secao !== this.secao) {
+      this.secao = this.el.dataset.secao;
+      window.scrollTo({top: 0});
+    }
+  }
+}
+
 Hooks.DragAndDrop = {
   mounted() {
     const trashBin = this.el;
