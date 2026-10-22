@@ -38,7 +38,7 @@ defmodule AppWeb.HomeLive do
             <div class="card h-100 border border-gray-300 rounded-0 shadow-none">
               <div class="bg-light-secondary d-flex align-items-center justify-content-center overflow-hidden" style="height: 240px;">
                 <%= if item.course.image && item.course.image != "" do %>
-                  <img src={"/images/cursos/#{item.course.image}"} alt={item.course.title} class="w-100 h-100" style="object-fit: cover;" />
+                  <img src={"/images/cursos/#{item.course.image}/banner.png"} alt={item.course.title} class="w-100 h-100" style="object-fit: cover;" />
                 <% else %>
                   <i class="ki-outline ki-picture text-gray-500" style="font-size: 4rem;"></i>
                 <% end %>

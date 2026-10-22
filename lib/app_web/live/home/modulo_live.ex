@@ -67,7 +67,7 @@ defmodule AppWeb.ModuloLive do
                 <div class="col-12">
                   <div class="bg-light-secondary d-flex align-items-center justify-content-right overflow-hidden rounded-2" style="height: 280px;">
                     <%= if @item.course.image && @item.course.image != "" do %>
-                      <img src={"/images/cursos/#{@item.course.image}"} alt={@item.course.title} class="w-auto" style="max-height: 280px; object-fit: cover;" />
+                      <img src={"/images/cursos/#{@item.course.image}/banner.png"} alt={@item.course.title} class="w-auto" style="" />
                     <% else %>
                       <div class="text-center">
                         <i class="ki-outline ki-picture text-gray-500" style="font-size: 5rem;"></i>

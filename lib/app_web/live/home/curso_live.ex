@@ -18,7 +18,8 @@ defmodule AppWeb.CursoLive do
            current_user: user,
            item: item,
            content: content,
-           answers: %{}
+           answers: %{},
+           quizzes: %{}
          )}
       else
         {:ok,
@@ -42,9 +43,53 @@ defmodule AppWeb.CursoLive do
     {:noreply, update(socket, :answers, &Map.put(&1, key, answer))}
   end
 
+  def handle_event("quiz_select", %{"key" => key, "option" => option}, socket) do
+    {:noreply,
+     update_quiz(socket, key, fn quiz ->
+       if MapSet.member?(quiz.validated, quiz.current),
+         do: quiz,
+         else: %{quiz | selected: Map.put(quiz.selected, quiz.current, option)}
+     end)}
+  end
+
+  def handle_event("quiz_select", _params, socket), do: {:noreply, socket}
+
+  def handle_event("quiz_validate", %{"key" => key}, socket) do
+    {:noreply,
+     update_quiz(socket, key, fn quiz ->
+       if Map.has_key?(quiz.selected, quiz.current),
+         do: %{quiz | validated: MapSet.put(quiz.validated, quiz.current)},
+         else: quiz
+     end)}
+  end
+
+  def handle_event("quiz_next", %{"key" => key}, socket) do
+    total = length(CourseContent.quiz_questions(socket.assigns.content, key))
+
+    {:noreply,
+     update_quiz(socket, key, fn quiz ->
+       if MapSet.member?(quiz.validated, quiz.current) and quiz.current < total - 1,
+         do: %{quiz | current: quiz.current + 1},
+         else: quiz
+     end)}
+  end
+
+  def handle_event("quiz_reset", %{"key" => key}, socket) do
+    {:noreply, update(socket, :quizzes, &Map.put(&1, key, new_quiz()))}
+  end
+
   def handle_event("complete_module", _params, socket) do
     %{current_user: user, item: item} = socket.assigns
 
+    if quizzes_passed?(socket.assigns) do
+      complete_module(socket, user, item)
+    else
+      {:noreply,
+       put_flash(socket, :error, "Acerte todas as questões da avaliação para concluir o módulo.")}
+    end
+  end
+
+  defp complete_module(socket, user, item) do
     case Courses.complete_course(user, item.course) do
       {:ok, _completion} ->
         {:noreply,
@@ -57,12 +102,37 @@ defmodule AppWeb.CursoLive do
     end
   end
 
+  defp new_quiz, do: %{current: 0, selected: %{}, validated: MapSet.new()}
+
+  defp quiz_score(quiz, questions) do
+    questions
+    |> Enum.with_index()
+    |> Enum.count(fn {q, i} ->
+      MapSet.member?(quiz.validated, i) and Map.get(quiz.selected, i) == q.answer
+    end)
+  end
+
+  defp quizzes_passed?(%{content: content, quizzes: quizzes}) do
+    content
+    |> CourseContent.quizzes()
+    |> Enum.all?(fn {key, questions} ->
+      quiz_score(Map.get(quizzes, key, new_quiz()), questions) == length(questions)
+    end)
+  end
+
+  defp update_quiz(socket, key, fun) do
+    update(socket, :quizzes, fn quizzes ->
+      Map.update(quizzes, key, fun.(new_quiz()), fun)
+    end)
+  end
+
   @impl true
   def render(assigns) do
     assigns =
       assign(assigns,
         next: CourseContent.next_section(assigns.content, assigns.section.slug),
-        previous: CourseContent.previous_section(assigns.content, assigns.section.slug)
+        previous: CourseContent.previous_section(assigns.content, assigns.section.slug),
+        quizzes_passed?: quizzes_passed?(assigns)
       )
 
     ~H"""
@@ -108,7 +178,13 @@ defmodule AppWeb.CursoLive do
         <article class="curso-article">
           <h1 id="curso-section-title" class="curso-heading"><%= @section.heading %></h1>
 
-          <.block :for={block <- @section.blocks} block={block} number={@content.number} answers={@answers} />
+          <.block
+            :for={block <- @section.blocks}
+            block={block}
+            number={@content.number}
+            answers={@answers}
+            quizzes={@quizzes}
+          />
 
           <div class="curso-pager">
             <.link
@@ -128,7 +204,7 @@ defmodule AppWeb.CursoLive do
               Próxima Sessão
             </.link>
             <button
-              :if={is_nil(@next) and not @item.completed?}
+              :if={is_nil(@next) and not @item.completed? and @quizzes_passed?}
               type="button"
               id="curso-complete"
               class="btn curso-btn-primary curso-pager-btn"
@@ -154,6 +230,7 @@ defmodule AppWeb.CursoLive do
   attr :block, :any, required: true
   attr :number, :integer, required: true
   attr :answers, :map, required: true
+  attr :quizzes, :map, default: %{}
 
   defp block(%{block: {:paragraph, html}} = assigns) do
     assigns = assign(assigns, :html, html)
@@ -248,6 +325,105 @@ defmodule AppWeb.CursoLive do
       <label for={"answer-#{@key}"} class="curso-text"><%= @prompt %></label>
       <textarea id={"answer-#{@key}"} name="answer" rows="4" phx-debounce="400"><%= @value %></textarea>
     </form>
+    """
+  end
+
+  defp block(%{block: {:quiz, key, questions, closing}} = assigns) do
+    quiz = Map.get(assigns.quizzes, key, new_quiz())
+    total = length(questions)
+    question = Enum.at(questions, quiz.current)
+    validated? = MapSet.member?(quiz.validated, quiz.current)
+    last? = quiz.current == total - 1
+
+    score = quiz_score(quiz, questions)
+
+    assigns =
+      assign(assigns,
+        key: key,
+        question: question,
+        number: quiz.current + 1,
+        total: total,
+        selected: Map.get(quiz.selected, quiz.current),
+        validated?: validated?,
+        finished?: validated? and last?,
+        last?: last?,
+        score: score,
+        perfect?: score == total,
+        closing: closing
+      )
+
+    ~H"""
+    <div id={"quiz-#{@key}"} class="curso-quiz">
+      <h2 class="curso-subtitle">Questões de fixação</h2>
+
+      <form id={"quiz-#{@key}-form"} phx-change="quiz_select" phx-submit="quiz_validate">
+        <input type="hidden" name="key" value={@key} />
+        <p id="quiz-question" class="curso-quiz-question">
+          <span><%= @number %>.</span> <%= @question.prompt %>
+        </p>
+
+        <label
+          :for={{letter, text} <- @question.options}
+          class={["curso-quiz-option", @validated? && letter == @question.answer && "is-correct"]}
+        >
+          <input
+            type="radio"
+            name="option"
+            value={letter}
+            checked={@selected == letter}
+            disabled={@validated?}
+          />
+          <span><%= letter %>) <%= text %></span>
+        </label>
+
+        <button
+          :if={not @validated?}
+          type="submit"
+          id="quiz-validate"
+          class="btn curso-btn-primary curso-quiz-btn"
+          disabled={is_nil(@selected)}
+        >
+          Validar
+        </button>
+      </form>
+
+      <div :if={@validated?} id="quiz-feedback" class="curso-quiz-feedback">
+        <strong>Resposta correta: <%= String.upcase(@question.answer) %></strong>
+        <span class="curso-quiz-result">
+          <%= if @selected == @question.answer, do: "Você acertou!", else: "Você respondeu #{String.upcase(@selected)}." %>
+        </span>
+      </div>
+
+      <button
+        :if={@validated? and not @last?}
+        type="button"
+        id="quiz-next"
+        class="btn curso-btn-primary curso-quiz-btn"
+        phx-click="quiz_next"
+        phx-value-key={@key}
+      >
+        Próxima Questão
+      </button>
+
+      <div :if={@finished? and @perfect?} id="quiz-closing" class="curso-quiz-closing">
+        <p class="curso-quiz-score">Parabéns! Você acertou <%= @score %> de <%= @total %> questões.</p>
+        <p :for={text <- @closing} class="curso-text"><%= text %></p>
+      </div>
+
+      <div :if={@finished? and not @perfect?} id="quiz-retry" class="curso-quiz-closing">
+        <p class="curso-quiz-score">Você acertou <%= @score %> de <%= @total %> questões.</p>
+        <p class="curso-text">Para concluir o módulo, é necessário acertar todas as questões.</p>
+        <button
+          type="button"
+          id="quiz-reset"
+          class="btn curso-btn-primary curso-quiz-btn"
+          phx-click="quiz_reset"
+          phx-value-key={@key}
+        >
+          Refazer avaliação
+        </button>
+      </div>
+    </div>
     """
   end
 end

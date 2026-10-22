@@ -14,6 +14,8 @@ defmodule App.CourseContent do
     * `{:cards, [%{title: t, items: [..]}]}` - quadros lado a lado
     * `{:reflection, key, prompt}` - campo de autorreflexão
     * `{:references, [html]}` - lista de referências bibliográficas
+    * `{:quiz, key, questions, closing}` - questões de múltipla escolha, respondidas
+      uma por vez; `closing` são os parágrafos exibidos ao final da avaliação
   """
 
   @source "Fonte: uso da ferramenta chat GPT para criação da imagem."
@@ -36,6 +38,18 @@ defmodule App.CourseContent do
   @doc "Procura a seção pelo `slug`; cai na primeira seção quando não encontrada."
   def find_section(course, slug) do
     Enum.find(course.sections, hd(course.sections), &(&1.slug == slug))
+  end
+
+  @doc "Retorna os quizzes do curso como `[{key, questions}]`."
+  def quizzes(course) do
+    for section <- course.sections, {:quiz, key, questions, _closing} <- section.blocks do
+      {key, questions}
+    end
+  end
+
+  @doc "Retorna as questões do quiz `key` do curso, ou `[]` quando não existir."
+  def quiz_questions(course, key) do
+    Enum.find_value(quizzes(course), [], fn {k, questions} -> k == key && questions end)
   end
 
   @doc "Retorna a seção seguinte à de `slug`, ou `nil` quando for a última."
@@ -247,6 +261,30 @@ defmodule App.CourseContent do
           ]
         },
         %{
+          slug: "atividade-interativa",
+          title: "Atividade Interativa com Chatbot",
+          heading: "Atividade Interativa com Chatbot",
+          blocks: [
+            {:subtitle, "Objetivo"},
+            {:paragraph, "Aplicar os conhecimentos adquiridos em uma situação clínica simulada."},
+            {:subtitle, "Caso clínico"},
+            {:paragraph,
+             "Paciente masculino, 74 anos, diabético, internado há 21 dias em UTI após cirurgia abdominal. Evolui com febre persistente, secreção pulmonar purulenta e piora respiratória. Está em ventilação mecânica, possui cateter venoso central e sonda vesical de demora. Cultura identifica <em>Klebsiella pneumoniae</em> multirresistente."},
+            {:list,
+             "Orientações: utilize o chatbot educacional para responder, a partir do caso clínico apresentado:",
+             [
+               "Quais fatores contribuíram para o desenvolvimento da resistência antimicrobiana?",
+               "Quais Infecções Relacionadas à Assistência à Saúde podem estar associadas?",
+               "Quais mecanismos de resistência podem estar envolvidos?",
+               "Como a segurança do paciente está comprometida?",
+               "Quais cuidados de enfermagem devem ser priorizados?",
+               "Quais medidas preventivas poderiam evitar esse quadro?"
+             ]},
+            {:callout, "Importante",
+             "O chatbot deve ser utilizado como ferramenta de apoio ao raciocínio crítico. Analise as respostas recebidas e compare com os conteúdos estudados ao longo do módulo."}
+          ]
+        },
+        %{
           slug: "referencias",
           title: "Referências",
           heading: "Referências",
@@ -265,6 +303,72 @@ defmodule App.CourseContent do
                "MURRAY, P.E.; COFFMAN, J.A.; GARCIÁ-GODOY, F. Antimicrobial Resistance: A Bibliometric Review of Patient Health, Mechanisms, and Therapeutic Strategies. <strong>Pathogens</strong>, v. 15, p. 288, 2026. Disponível em: https://doi.org/10.3390/pathogens15030288.",
                "NATIONAL COMMISSION ON CORRECTIONAL HEALTH CARE (NCCHC). <strong>Antimicrobial Stewardship (2026): position statements.</strong> Chicago: NCCHC, 2026. Disponível em: https://ncchc.org/position-statements/antimicrobial-stewardship-2026/.",
                "ORGANIZAÇÃO MUNDIAL DA SAÚDE (OMS). <strong>Antimicrobial resistance.</strong> Genebra: World Health Organization, 2023. Disponível em: https://www.who.int/news-room/fact-sheets/detail/antimicrobial-resistance."
+             ]}
+          ]
+        },
+        %{
+          slug: "avaliacao",
+          title: "Avaliação",
+          heading: "Avaliação",
+          blocks: [
+            {:quiz, "avaliacao",
+             [
+               %{
+                 prompt: "A resistência antimicrobiana ocorre principalmente devido:",
+                 options: [
+                   {"a", "Uso racional de antibióticos"},
+                   {"b", "Higienização correta das mãos"},
+                   {"c", "Uso inadequado e excessivo de antimicrobianos"},
+                   {"d", "Redução das Infecções Relacionadas à Assistência à Saúde"}
+                 ],
+                 answer: "c"
+               },
+               %{
+                 prompt: "Qual alternativa representa mecanismo bacteriano de resistência?",
+                 options: [
+                   {"a", "Hipotermia"},
+                   {"b", "Produção de beta-lactamases"},
+                   {"c", "Hiperglicemia"},
+                   {"d", "Sedação contínua"}
+                 ],
+                 answer: "b"
+               },
+               %{
+                 prompt:
+                   "As Infecções Relacionadas à Assistência à Saúde contribuem para resistência antimicrobiana porque:",
+                 options: [
+                   {"a", "Reduzem internações"},
+                   {"b", "Eliminam transmissão bacteriana"},
+                   {"c", "Favorecem disseminação de microrganismos resistentes"},
+                   {"d", "Impedem uso de antibióticos"}
+                 ],
+                 answer: "c"
+               },
+               %{
+                 prompt: "O uso racional de antimicrobianos inclui:",
+                 options: [
+                   {"a", "Administração correta, dose adequada e tempo correto de tratamento"},
+                   {"b", "Utilização de antibióticos sem prescrição"},
+                   {"c", "Interrupção do tratamento ao melhorar os sintomas"},
+                   {"d", "Compartilhamento de antibióticos entre pacientes"}
+                 ],
+                 answer: "a"
+               },
+               %{
+                 prompt:
+                   "Qual das alternativas representa uma medida importante da enfermagem na prevenção da resistência antimicrobiana?",
+                 options: [
+                   {"a", "Higiene das mãos uma vez ao turno"},
+                   {"b", "Uso indiscriminado de antibióticos"},
+                   {"c", "Suspensão de protocolos de isolamento"},
+                   {"d", "Administração segura de antimicrobianos e precauções de contato"}
+                 ],
+                 answer: "d"
+               }
+             ],
+             [
+               "O enfrentamento da resistência antimicrobiana depende de práticas seguras, vigilância contínua e atuação crítica da equipe multiprofissional.",
+               "No próximo módulo, serão abordados os antimicrobianos na prática clínica, incluindo administração segura, uso racional e monitoramento realizado pela enfermagem."
              ]}
           ]
         }
