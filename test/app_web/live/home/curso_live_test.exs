@@ -168,6 +168,71 @@ defmodule AppWeb.CursoLiveTest do
     end
   end
 
+  describe "course 2" do
+    setup %{user: user, m1: m1} do
+      {:ok, _} = Courses.complete_course(user, m1)
+      :ok
+    end
+
+    test "shows the aside with the 12 sections and the first one active", %{conn: conn, m2: m2} do
+      {:ok, view, html} = live(conn, ~p"/cursos/#{m2.id}")
+
+      assert html =~ "Curso 2"
+      assert html =~ "Antibióticos na prática clínica"
+      assert has_element?(view, "li.active #curso-section-introducao")
+      assert has_element?(view, "#curso-section-comunicacao-interprofissional .curso-aside-number", "11")
+      assert has_element?(view, "#curso-section-atividade-gamificada .curso-aside-number", "12")
+      assert has_element?(view, "#curso-section-title", "Introdução e Problematização")
+      refute has_element?(view, "#curso-prev")
+    end
+
+    test "every section renders and all figures are served from curso_2", %{conn: conn, m2: m2} do
+      content = App.CourseContent.get(2)
+
+      for section <- content.sections do
+        {:ok, view, _html} = live(conn, ~p"/cursos/#{m2.id}?secao=#{section.slug}")
+        assert has_element?(view, "#curso-section-title", section.heading)
+      end
+
+      for n <- 1..7 do
+        file = "figura_#{n}.png"
+        assert File.exists?(Path.join("priv/static", App.CourseContent.figure_path(2, file)))
+
+        section =
+          Enum.find(content.sections, fn s ->
+            Enum.any?(s.blocks, &(elem(&1, 0) == :figure and elem(&1, 1) == file))
+          end)
+
+        {:ok, view, _html} = live(conn, ~p"/cursos/#{m2.id}?secao=#{section.slug}")
+        assert has_element?(view, "img[src='/images/cursos/curso_2/#{file}']")
+      end
+    end
+
+    test "renders the mechanisms table, the nine rights and the SBAR table", %{conn: conn, m2: m2} do
+      {:ok, view, _html} = live(conn, ~p"/cursos/#{m2.id}?secao=mecanismos-de-acao")
+      assert has_element?(view, "table.curso-table th", "Alvo bacteriano")
+      assert has_element?(view, "table.curso-table td", "Polimixinas e daptomicina")
+
+      {:ok, view, _html} = live(conn, ~p"/cursos/#{m2.id}?secao=nove-certos")
+      assert has_element?(view, ".curso-card h3", "1. Paciente certo")
+      assert has_element?(view, ".curso-card h3", "9. Resposta certa")
+      assert has_element?(view, ".curso-card-intro", "Monitorar:")
+
+      {:ok, view, _html} = live(conn, ~p"/cursos/#{m2.id}?secao=comunicacao-interprofissional")
+      assert has_element?(view, "table.curso-table td", "S – Situação")
+    end
+
+    test "uses the custom figure source when provided", %{conn: conn, m2: m2} do
+      {:ok, view, _html} = live(conn, ~p"/cursos/#{m2.id}?secao=mecanismos-de-acao")
+      assert has_element?(view, "figcaption span", "com revisão dos autores")
+    end
+
+    test "start button points to the course page", %{conn: conn, m2: m2} do
+      {:ok, view, _html} = live(conn, ~p"/")
+      assert has_element?(view, "a#module-start-#{m2.id}[href='/cursos/#{m2.id}']")
+    end
+  end
+
   test "redirects locked modules and modules without content", %{conn: conn, m2: m2} do
     assert {:error, {:redirect, %{to: "/"}}} = live(conn, ~p"/cursos/#{m2.id}")
     assert {:error, {:redirect, %{to: "/"}}} = live(conn, ~p"/cursos/0")

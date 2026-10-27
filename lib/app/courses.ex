@@ -8,6 +8,7 @@ defmodule App.Courses do
 
   alias App.Courses.Course
   alias App.Courses.Completion
+  alias App.Courses.GameAttempt
 
   @doc """
   Returns the list of courses.
@@ -255,6 +256,35 @@ defmodule App.Courses do
     from(c in Completion, where: c.user_id == ^user_id, select: c.course_id)
     |> Repo.all()
     |> MapSet.new()
+  end
+
+  @doc "Retorna a tentativa do aluno na atividade gamificada `key` do curso, ou `nil`."
+  def get_game_attempt(user, %Course{id: course_id}, key) do
+    Repo.get_by(GameAttempt, user_id: user.id, course_id: course_id, key: key)
+  end
+
+  @doc """
+  Salva o andamento do aluno na atividade gamificada `key`.
+
+  `attrs` contém `:state`, `:status`, `:points` e, ao finalizar, `:level`,
+  `:effectiveness`, `:safety` e `:finished_at`. Uma tentativa já finalizada nunca
+  é alterada, pois a atividade só pode ser jogada uma vez.
+  """
+  def save_game_attempt(user, %Course{id: course_id} = course, key, attrs) do
+    case get_game_attempt(user, course, key) do
+      %GameAttempt{status: "playing"} = attempt ->
+        attempt |> GameAttempt.changeset(attrs) |> Repo.update()
+
+      %GameAttempt{} = attempt ->
+        {:ok, attempt}
+
+      nil ->
+        %GameAttempt{}
+        |> GameAttempt.changeset(
+          Map.merge(attrs, %{user_id: user.id, course_id: course_id, key: key})
+        )
+        |> Repo.insert()
+    end
   end
 
   defp list_modules do

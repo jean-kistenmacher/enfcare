@@ -3,6 +3,7 @@ defmodule AppWeb.CursoLive do
 
   alias App.Accounts
   alias App.CourseContent
+  alias App.CourseGame
   alias App.Courses
 
   @impl true
@@ -19,7 +20,8 @@ defmodule AppWeb.CursoLive do
            item: item,
            content: content,
            answers: %{},
-           quizzes: %{}
+           quizzes: %{},
+           games: load_games(user, item.course, content)
          )}
       else
         {:ok,
@@ -78,15 +80,92 @@ defmodule AppWeb.CursoLive do
     {:noreply, update(socket, :quizzes, &Map.put(&1, key, new_quiz()))}
   end
 
+  def handle_event("game_start", %{"key" => key}, socket) do
+    {:noreply, update_game(socket, key, &CourseGame.start/1)}
+  end
+
+  def handle_event("game_hint", %{"key" => key}, socket) do
+    {:noreply, update_game(socket, key, &CourseGame.hint/1)}
+  end
+
+  def handle_event("game_continue", %{"key" => key}, socket) do
+    {:noreply, update_game(socket, key, &CourseGame.continue/1)}
+  end
+
+  def handle_event("game_select", %{"key" => key} = params, socket) do
+    {:noreply, update_game(socket, key, &CourseGame.select(&1, game_value(params)))}
+  end
+
+  def handle_event("game_submit", %{"key" => key} = params, socket) do
+    {:noreply,
+     update_game(socket, key, fn state ->
+       CourseGame.submit(state, game_value(params) || state["input"] || "")
+     end)}
+  end
+
   def handle_event("complete_module", _params, socket) do
     %{current_user: user, item: item} = socket.assigns
 
-    if quizzes_passed?(socket.assigns) do
-      complete_module(socket, user, item)
-    else
-      {:noreply,
-       put_flash(socket, :error, "Acerte todas as questões da avaliação para concluir o módulo.")}
+    cond do
+      not quizzes_passed?(socket.assigns) ->
+        {:noreply,
+         put_flash(socket, :error, "Acerte todas as questões da avaliação para concluir o módulo.")}
+
+      not games_finished?(socket.assigns) ->
+        {:noreply,
+         put_flash(socket, :error, "Finalize a atividade gamificada para concluir o módulo.")}
+
+      true ->
+        complete_module(socket, user, item)
     end
+  end
+
+  defp game_value(params), do: params["option"] || params["answer"]
+
+  defp load_games(user, course, content) do
+    Map.new(CourseContent.games(content), fn key ->
+      state =
+        case Courses.get_game_attempt(user, course, key) do
+          nil -> CourseGame.new_state()
+          attempt -> CourseGame.load_state(attempt.state)
+        end
+
+      {key, state}
+    end)
+  end
+
+  # Cada mudança de estado é salva, para que vidas e pontos não sejam recuperados
+  # ao recarregar a página. A resposta em edição (`game_select`) só é salva ao enviar.
+  defp update_game(socket, key, fun) do
+    case socket.assigns.games do
+      %{^key => state} ->
+        new_state = fun.(state)
+        socket = assign(socket, :games, Map.put(socket.assigns.games, key, new_state))
+        if new_state == state, do: socket, else: save_game(socket, key, state, new_state)
+
+      _ ->
+        socket
+    end
+  end
+
+  defp save_game(socket, key, state, new_state) do
+    if new_state["input"] != state["input"] and new_state["hint"] == state["hint"] and
+         new_state["step"] == state["step"] and new_state["feedback"] == state["feedback"] do
+      socket
+    else
+      %{current_user: user, item: item} = socket.assigns
+
+      case Courses.save_game_attempt(user, item.course, key, CourseGame.attempt_attrs(new_state)) do
+        {:ok, _attempt} -> socket
+        {:error, _changeset} -> put_flash(socket, :error, "Não foi possível salvar seu progresso.")
+      end
+    end
+  end
+
+  defp games_finished?(%{content: content, games: games}) do
+    content
+    |> CourseContent.games()
+    |> Enum.all?(&CourseGame.finished?(Map.fetch!(games, &1)))
   end
 
   defp complete_module(socket, user, item) do
@@ -132,7 +211,7 @@ defmodule AppWeb.CursoLive do
       assign(assigns,
         next: CourseContent.next_section(assigns.content, assigns.section.slug),
         previous: CourseContent.previous_section(assigns.content, assigns.section.slug),
-        quizzes_passed?: quizzes_passed?(assigns)
+        requirements_met?: quizzes_passed?(assigns) and games_finished?(assigns)
       )
 
     ~H"""
@@ -184,6 +263,7 @@ defmodule AppWeb.CursoLive do
             number={@content.number}
             answers={@answers}
             quizzes={@quizzes}
+            games={@games}
           />
 
           <div class="curso-pager">
@@ -204,7 +284,7 @@ defmodule AppWeb.CursoLive do
               Próxima Sessão
             </.link>
             <button
-              :if={is_nil(@next) and not @item.completed? and @quizzes_passed?}
+              :if={is_nil(@next) and not @item.completed? and @requirements_met?}
               type="button"
               id="curso-complete"
               class="btn curso-btn-primary curso-pager-btn"
@@ -231,6 +311,7 @@ defmodule AppWeb.CursoLive do
   attr :number, :integer, required: true
   attr :answers, :map, required: true
   attr :quizzes, :map, default: %{}
+  attr :games, :map, default: %{}
 
   defp block(%{block: {:paragraph, html}} = assigns) do
     assigns = assign(assigns, :html, html)
@@ -249,11 +330,15 @@ defmodule AppWeb.CursoLive do
   end
 
   defp block(%{block: {:figure, file, caption}} = assigns) do
+    block(%{assigns | block: {:figure, file, caption, CourseContent.source()}})
+  end
+
+  defp block(%{block: {:figure, file, caption, source}} = assigns) do
     assigns =
       assign(assigns,
         src: CourseContent.figure_path(assigns.number, file),
         caption: caption,
-        source: CourseContent.source()
+        source: source
       )
 
     ~H"""
@@ -280,6 +365,40 @@ defmodule AppWeb.CursoLive do
     """
   end
 
+  defp block(%{block: {:intro_list, html, items}} = assigns) do
+    assigns = assign(assigns, html: html, items: items)
+
+    ~H"""
+    <div class="curso-list">
+      <p class="curso-text curso-list-intro"><%= raw(@html) %></p>
+      <ul>
+        <li :for={item <- @items}><%= raw(item) %></li>
+      </ul>
+    </div>
+    """
+  end
+
+  defp block(%{block: {:table, header, rows}} = assigns) do
+    assigns = assign(assigns, header: header, rows: rows)
+
+    ~H"""
+    <div class="curso-table-wrapper">
+      <table class="curso-table">
+        <thead>
+          <tr>
+            <th :for={cell <- @header} scope="col"><%= cell %></th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr :for={row <- @rows}>
+            <td :for={cell <- row}><%= cell %></td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+    """
+  end
+
   defp block(%{block: {:callout, label, text}} = assigns) do
     assigns = assign(assigns, label: label, text: text)
 
@@ -297,6 +416,7 @@ defmodule AppWeb.CursoLive do
     <div class="curso-cards">
       <section :for={card <- @cards} class="curso-card">
         <h3><%= card.title %></h3>
+        <p :if={Map.get(card, :intro)} class="curso-card-intro"><%= card.intro %></p>
         <ul>
           <li :for={item <- card.items}><%= item %></li>
         </ul>
@@ -325,6 +445,14 @@ defmodule AppWeb.CursoLive do
       <label for={"answer-#{@key}"} class="curso-text"><%= @prompt %></label>
       <textarea id={"answer-#{@key}"} name="answer" rows="4" phx-debounce="400"><%= @value %></textarea>
     </form>
+    """
+  end
+
+  defp block(%{block: {:game, key}} = assigns) do
+    assigns = assign(assigns, key: key, state: Map.fetch!(assigns.games, key))
+
+    ~H"""
+    <AppWeb.CursoGameComponents.game key={@key} state={@state} />
     """
   end
 

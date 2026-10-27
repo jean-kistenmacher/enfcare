@@ -251,9 +251,9 @@ defmodule AppWeb.LandingLive do
 					</a>
 					<a class="home-card" href="/auth/users/log_in">
 						<div class="card-img">
-							<img src="/images/enf_care.png" alt="EnfCare" />
+							<img src="/images/enf_care.png" alt="NurceQuest" />
 						</div>
-						<div class="card-label">EnfCare</div>
+						<div class="card-label">NurceQuest</div>
 					</a>
 				</div>
 			</div>
@@ -268,7 +268,7 @@ defmodule AppWeb.LandingLive do
 						<div class="mb-5 mb-md-0"></div>
 						<!--end::Logo-->
 						<!--begin::Copyright-->
-						<div class="text-dark fw-semibold fs-6">2026 © EnfCare. All rights reserved.</div>
+						<div class="text-dark fw-semibold fs-6">2026 © NurceQuest. All rights reserved.</div>
 						<div class="mb-5 mb-md-0"></div>
 						<!--end::Copyright-->
 					</div>

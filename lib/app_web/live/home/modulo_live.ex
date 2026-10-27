@@ -30,6 +30,40 @@ defmodule AppWeb.ModuloLive do
         "Tomada de decisão baseada em evidências científicas e boas práticas assistenciais."
       ],
       workload: "2 horas"
+    },
+    2 => %{
+      description: "Neste módulo, você conhecerá os principais mecanismos de ação e classes de antibióticos utilizados na prática hospitalar, bem como os cuidados necessários para sua administração segura.
+      Serão abordados a Concentração Inibitória Mínima (CIM), o cumprimento dos horários, o aprazamento, as incompatibilidades, os nove certos da administração de medicamentos e o monitoramento de efeitos adversos e da resposta terapêutica.
+      Ao longo do módulo, você assumirá o papel de enfermeiro em um plantão simulado, analisando prescrições e tomando decisões relacionadas à segurança da antibioticoterapia.
+      ",
+      activities: [
+        "Leitura guiada",
+        "Momentos de reflexão",
+        "Atividades interativas",
+        "Análise de caso clínico",
+        "Uso orientado de chatbot educacional",
+        "Atividade gamificada baseada em escolhas",
+        "Avaliação de aprendizagem"
+      ],
+      objectives: [
+        "Reconhecer os principais mecanismos de ação e classes de antibióticos",
+        "Explicar a importância da CIM e dos horários de administração",
+        "Aplicar os princípios do aprazamento seguro",
+        "Diferenciar interação medicamentosa de incompatibilidade físico-química",
+        "Aplicar os nove certos da administração de medicamentos",
+        "Reconhecer efeitos adversos, toxicidades e sinais de resposta clínica inadequada",
+        "Identificar as condutas iniciais de Enfermagem diante de intercorrências",
+        "Compreender a participação da Enfermagem no uso seguro e racional dos antibióticos"
+      ],
+      competencies: [
+        "Administração segura de antibióticos",
+        "Identificação de riscos relacionados ao preparo, aprazamento e administração",
+        "Monitoramento da resposta terapêutica e dos eventos adversos",
+        "Raciocínio clínico e tomada de decisão",
+        "Comunicação com a equipe multiprofissional",
+        "Atuação baseada em evidências e na segurança do paciente"
+      ],
+      workload: "3 horas"
     }
   }
 
