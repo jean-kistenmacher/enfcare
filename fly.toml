@@ -1,9 +1,9 @@
-# fly.toml app configuration file generated for roteirocare on 2025-11-19T18:58:19-03:00
+# fly.toml app configuration file generated for enfcare on 2026-11-05T18:58:19-03:00
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
 
-app = 'roteirocare'
+app = 'enfcare'
 primary_region = 'gru'
 kill_signal = 'SIGTERM'
 
