@@ -1,4 +1,4 @@
-# fly.toml app configuration file generated for enfcare on 2026-11-05T18:58:19-03:00
+# fly.toml app configuration file generated for enfcare on 2026-11-05T18:56:55Z
 #
 # See https://fly.io/docs/reference/configuration/ for information about how to use this file.
 #
@@ -8,12 +8,11 @@ primary_region = 'gru'
 kill_signal = 'SIGTERM'
 
 [build]
-
 [deploy]
   release_command = '/app/bin/migrate'
 
 [env]
-  PHX_HOST = 'roteirocare.fly.dev'
+  PHX_HOST = 'enfcare.fly.dev'
   PORT = '8080'
 
 [http_service]
@@ -33,3 +32,4 @@ kill_signal = 'SIGTERM'
   memory = '512mb'
   cpu_kind = 'shared'
   cpus = 1
+  memory_mb = 512
